@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 4: Clustering Parameter Tuning</title>
+    <!-- Load Tailwind CSS CDN for instant styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font and basic setup for a clean academic look */
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; }
+        .card { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .timer-glow { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        /* Style input fields within the table for neat data entry */
+        #comparison-table input { 
+            width: 100%; 
+            text-align: center; 
+            background-color: #f9fafb; 
+            border: 1px solid #e5e7eb; 
+            padding: 4px; 
+            border-radius: 4px; 
+            transition: all 0.2s;
+        }
+        #comparison-table input:focus {
+            outline: none;
+            border-color: #3b82f6; /* Tailwind blue-500 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+    <script>
+        // Set up custom colors for Tailwind configuration
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#1e40af', // Deep blue for accents
+                        'secondary-gray': '#4b5563',
+                        'red-600': '#dc2626',
+                        'yellow-600': '#ca8a04',
+                        'green-600': '#16a34a',
+                    },
+                }
+            }
+        }
+
+        // --- Timer Logic for Pacing the 55-minute Work Segment ---
+        
+        // Define the total time allowed for the independent task (55 minutes).
+        const WORK_DURATION_MINUTES = 55; 
+
+        // Variables to hold the timer's starting time and the interval reference.
+        let workTimerStartTime;
+        let timerUpdateInterval; 
+        
+        // A simple function to retrieve the timer element by ID.
+        function getTimerDisplayElement() {
+            return document.getElementById('work-timer');
+        }
+
+        /**
+         * Initializes the timer: sets the starting time and begins the recurring countdown.
+         */
+        function initializeTimer() {
+            const displayElement = getTimerDisplayElement();
+            if (!displayElement) {
+                console.error("Timer display element not found, cannot start timer.");
+                return;
+            }
+
+            // Display the full duration before the countdown begins.
+            displayElement.textContent = `${WORK_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
+            
+            // Capture the current timestamp.
+            workTimerStartTime = Date.now();
+            
+            // Start the timer loop, calling updateCountdown every second.
+            timerUpdateInterval = setInterval(updateCountdown, 1000);
+        }
+
+        /**
+         * Updates the countdown display and changes color for time warnings.
+         */
+        function updateCountdown() {
+            const timePassedMs = Date.now() - workTimerStartTime;
+            const totalWorkSeconds = WORK_DURATION_MINUTES * 60;
+            
+            // Calculate remaining time, clamping at zero.
+            const remainingSeconds = Math.max(0, totalWorkSeconds - (timePassedMs / 1000));
+
+            const minutesLeft = Math.floor(remainingSeconds / 60);
+            const secondsLeft = Math.floor(remainingSeconds % 60);
+
+            const timerDisplay = getTimerDisplayElement();
+
+            if (timerDisplay) {
+                // Format the time as MM:SS.
+                timerDisplay.textContent = `${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`;
+                
+                // --- Color Alert System (for student pacing) ---
+                
+                // 5 minutes remaining (300 seconds): Red alert, time to finish the analysis.
+                if (remainingSeconds <= 300 && remainingSeconds > 0) {
+                    timerDisplay.className = 'text-3xl font-extrabold text-red-600 timer-glow';
+                } 
+                // 15 minutes remaining (900 seconds): Yellow warning, focusing on final steps.
+                else if (remainingSeconds <= 900 && remainingSeconds > 0) {
+                    timerDisplay.className = 'text-3xl font-extrabold text-yellow-600';
+                } 
+                // Default state: Plenty of time, green.
+                else if (remainingSeconds > 0) {
+                     timerDisplay.className = 'text-3xl font-extrabold text-green-600';
+                }
+                
+                // Time's up! Stop the clock and display the final message.
+                if (remainingSeconds === 0) {
+                    timerDisplay.textContent = 'TIME UP!';
+                    clearInterval(timerUpdateInterval);
+                }
+            }
+        }
+
+        // Start the timer once the entire page content is loaded.
+        document.addEventListener('DOMContentLoaded', initializeTimer);
+    </script>
+</head>
+<body class="p-4 md:p-8">
+    
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- Header, Logo, and Timer -->
+        <header class="mb-8 p-6 bg-white rounded-xl card border-t-4 border-primary-blue">
+            <div class="flex items-start justify-between mb-4">
+                <img src="https://www.olivet.edu/wp-content/uploads/2023/08/logo-side-OnLightBG_200w_02.png" 
+                     alt="ONU Logo" 
+                     class="h-10 w-auto"
+                     onerror="this.onerror=null;this.src='https://placehold.co/200x40/1e40af/ffffff?text=ONU+Logo';">
+                <div class="text-right">
+                    <h1 class="text-3xl font-bold text-primary-blue">Module 4: Clustering Parameter Tuning</h1>
+                    <p class="text-secondary-gray mt-1 text-lg">Hierarchical Linkage Analysis</p>
+                </div>
+            </div>
+            
+            <!-- Link to the Colab Notebook -->
+            <div class="mt-4 mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p class="text-blue-700 font-bold">
+                    <svg class="w-5 h-5 inline mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    Colab Notebook Link:
+                    <a href="https://colab.research.google.com/drive/1-j0maGQK-Yx_Wd0_jqxRr7wJAdpl7UCj#scrollTo=PUukWvZuQ1rw" target="_blank" class="text-primary-blue underline hover:text-blue-800 break-words">
+                        Open the Hierarchical Clustering Colab notebook
+                    </a>
+                </p>
+            </div>
+
+            <!-- The Live Countdown Display -->
+            <div class="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                <span class="text-lg font-semibold text-secondary-gray">Time Remaining for Independent Work (55 mins):</span>
+                <span id="work-timer" class="text-3xl font-extrabold text-green-600">55:00</span>
+            </div>
+        </header>
+
+        <!-- Objectives -->
+        <section class="mb-8 p-6 bg-white rounded-xl card">
+            <h2 class="text-xl font-semibold mb-3 text-primary-blue flex items-center">
+                <svg class="w-5 h-5 mr-2 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                🎯 Objective
+            </h2>
+            <p class="text-secondary-gray">Your goal is to perform a deep comparative analysis of **three** Hierarchical Clustering strategies (`'ward'`, `'average'`, `'complete'`) against the **K-Means** baseline. You must analyze the impact of the **linkage method** on cluster quality using the Silhouette Score.</p>
+        </section>
+
+        <!-- Instructions -->
+        <section class="mb-8 p-6 bg-white rounded-xl card">
+            <h2 class="text-xl font-semibold mb-4 text-primary-blue flex items-center">
+                <svg class="w-5 h-5 mr-2 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                📝 Instructions
+            </h2>
+
+            <!-- Step 1: Baseline (Ward) -->
+            <div class="mb-6 p-4 border-l-4 border-indigo-400 bg-indigo-50 rounded-md">
+                <h3 class="text-lg font-medium text-indigo-700">Section I: Baseline & Dendrogram Analysis (Ward Linkage)</h3>
+                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">(Estimated Time: 15 minutes)</p>
+                <ol class="list-decimal list-inside ml-2 text-secondary-gray space-y-2">
+                    <li>**Locate the Code:** Scroll to the code block around **Section 8** (Hierarchical Clustering) in your **Colab notebook**.</li>
+                    <li>**Run the Baseline:** Ensure the code is set to `method='ward'` and run the cell.</li>
+                    <li>**Record & Analyze:** Record the Silhouette Score in the table below. Use the Dendrogram to visually determine the Y-axis distance needed for $k=4$ clusters and answer Question 1.</li>
+                </ol>
+            </div>
+
+            <!-- Step 2: Tuning (Average) -->
+            <div class="mb-6 p-4 border-l-4 border-purple-400 bg-purple-50 rounded-md">
+                <h3 class="text-lg font-medium text-purple-700">Section II: Tune the Model (Average Linkage)</h3>
+                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">(Estimated Time: 15 minutes)</p>
+                <p class="text-secondary-gray mb-3">The `'average'` method uses the mean distance between points in two clusters. You must change the linkage method in **two places** in the **Colab notebook** code cell:</p>
+                <ol class="list-decimal list-inside ml-2 text-secondary-gray space-y-2">
+                    <li>**Modify Code (1):** Change `method='ward'` to **`method='average'`** in the `linked = linkage(X_scaled, method='...')` call.</li>
+                    <li>**Modify Code (2):** Change `linkage='ward'` to **`linkage='average'`** in the `h_cluster = AgglomerativeClustering(..., linkage='...')` call.</li>
+                    <li>**Re-run:** Run the cell again.</li>
+                    <li>**Record:** Record the new Silhouette Score in the comparison table below.</li>
+                </ol>
+            </div>
+            
+            <!-- Step 3: Deep Tuning (Complete) -->
+            <div class="mb-6 p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+                <h3 class="text-lg font-medium text-red-700">Section III: Deep Tuning (Complete Linkage)</h3>
+                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">(Estimated Time: 10 minutes)</p>
+                <p class="text-secondary-gray mb-3">The `'complete'` method (max distance) tends to produce more compact clusters. Repeat the tuning process for this final method, updating the **Colab notebook** code in two places:</p>
+                <ol class="list-decimal list-inside ml-2 text-secondary-gray space-y-2">
+                    <li>**Modify Code (1):** Change `method='average'` to **`method='complete'`** in the `linked = linkage(X_scaled, method='...')` call.</li>
+                    <li>**Modify Code (2):** Change `linkage='average'` to **`linkage='complete'`** in the `h_cluster = AgglomerativeClustering(..., linkage='...')` call.</li>
+                    <li>**Re-run:** Run the cell a final time.</li>
+                    <li>**Record:** Record the final Silhouette Score in the comparison table below.</li>
+                </ol>
+            </div>
+
+            <!-- Step 4: Final Analysis -->
+            <div class="p-4 border-l-4 border-teal-400 bg-teal-50 rounded-md">
+                <h3 class="text-lg font-medium text-teal-700">Section IV: Final Analysis Questions</h3>
+                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">(Estimated Time: 15 minutes)</p>
+                <p class="text-secondary-gray">Use all four recorded scores to answer the final, comparative analysis questions below.</p>
+            </div>
+        </section>
+
+        <!-- Data Table -->
+        <section class="mb-8 p-6 bg-white rounded-xl card">
+            <h2 class="text-xl font-semibold mb-4 text-primary-blue">
+                📊 Data Collection & Comparison Table
+            </h2>
+            <div class="overflow-x-auto">
+                <table id="comparison-table" class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clustering Model</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Linkage Method</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Optimal $k$</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Silhouette Score (4 decimal places)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr class="bg-gray-100">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">K-Means (Baseline)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">N/A</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-700">4</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-primary-blue">0.8334</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Hierarchical (Run 1)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">Ward</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">4</td>
+                            <td class="px-6 py-4">
+                                <input type="text" placeholder="Enter Score (0.xxxx)" maxlength="6" id="score-ward">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Hierarchical (Run 2)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">Average</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">4</td>
+                            <td class="px-6 py-4">
+                                <input type="text" placeholder="Enter Score (0.xxxx)" maxlength="6" id="score-average">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Hierarchical (Run 3)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">Complete</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">4</td>
+                            <td class="px-6 py-4">
+                                <input type="text" placeholder="Enter Score (0.xxxx)" maxlength="6" id="score-complete">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Final Questions -->
+        <section class="p-6 bg-white rounded-xl card">
+            <h2 class="text-xl font-semibold mb-4 text-primary-blue">
+                ✍️ Final Analysis Questions
+            </h2>
+            <p class="text-secondary-gray mb-4">Answer these questions in your **Colab notebook** or in a separate document after completing the hands-on tasks.</p>
+
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-1">1. Dendrogram Interpretation (Ward Linkage):</h3>
+                    <p class="text-sm text-secondary-gray">Approximately what **Y-axis distance** level would you draw a horizontal cut line to isolate exactly $k=4$ clusters? (Hint: The point where 4 distinct vertical lines would appear).</p>
+                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="2" placeholder="Your Answer..."></textarea>
+                </div>
+                
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-1">2. Impact of Linkage Methods:</h3>
+                    <p class="text-sm text-secondary-gray">Compare the results of the three Hierarchical Linkage methods ('Ward', 'Average', 'Complete'). Which method performed the best? Based on what you know about how these methods work, why might one method be better suited than the others for this particular video game sales data?</p>
+                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="4" placeholder="Your Answer..."></textarea>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-1">3. Overall Model Recommendation:</h3>
+                    <p class="text-sm text-secondary-gray">Considering the K-Means Baseline, the best Hierarchical Model you found, and the principle that **the best model is often the simplest model**: Which overall clustering approach would you recommend for production use? **Justify your choice** based on the final scores and the computational simplicity of the chosen method.</p>
+                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="4" placeholder="Your Answer..."></textarea>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="mt-8 text-center text-xs text-secondary-gray p-4">
+            Module 4 - Unsupervised Learning Workshop - ONU Data Science Program - Prepared by Professor Younger, October 2025
+        </footer>
+    </div>
+
+</body>
+</html>
