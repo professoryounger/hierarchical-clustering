@@ -27,6 +27,23 @@
             border-color: #3b82f6; /* Tailwind blue-500 */
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
         }
+        
+        /* CSS to ensure persistence elements are correctly styled */
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Hide non-essential elements when printing (like the timer and the print button itself) */
+        @media print {
+            .print\:hidden { display: none !important; }
+            body { background-color: white !important; }
+            .card { box-shadow: none !important; border: none !important; }
+            .max-w-4xl { max-width: 100% !important; }
+            /* Ensure textareas are visible when printed */
+            textarea { height: auto !important; min-height: 50px; }
+        }
     </style>
     <script>
         // Set up custom colors for Tailwind configuration
@@ -46,82 +63,92 @@
 
         // --- Timer Logic for Pacing the 55-minute Work Segment ---
         
-        // Define the total time allowed for the independent task (55 minutes).
         const WORK_DURATION_MINUTES = 55; 
-
-        // Variables to hold the timer's starting time and the interval reference.
         let workTimerStartTime;
         let timerUpdateInterval; 
         
-        // A simple function to retrieve the timer element by ID.
         function getTimerDisplayElement() {
             return document.getElementById('work-timer');
         }
 
-        /**
-         * Initializes the timer: sets the starting time and begins the recurring countdown.
-         */
         function initializeTimer() {
             const displayElement = getTimerDisplayElement();
-            if (!displayElement) {
-                console.error("Timer display element not found, cannot start timer.");
-                return;
-            }
+            if (!displayElement) return console.error("Timer display element not found.");
 
-            // Display the full duration before the countdown begins.
             displayElement.textContent = `${WORK_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
-            
-            // Capture the current timestamp.
             workTimerStartTime = Date.now();
-            
-            // Start the timer loop, calling updateCountdown every second.
             timerUpdateInterval = setInterval(updateCountdown, 1000);
         }
 
-        /**
-         * Updates the countdown display and changes color for time warnings.
-         */
         function updateCountdown() {
             const timePassedMs = Date.now() - workTimerStartTime;
             const totalWorkSeconds = WORK_DURATION_MINUTES * 60;
-            
-            // Calculate remaining time, clamping at zero.
             const remainingSeconds = Math.max(0, totalWorkSeconds - (timePassedMs / 1000));
-
             const minutesLeft = Math.floor(remainingSeconds / 60);
             const secondsLeft = Math.floor(remainingSeconds % 60);
 
             const timerDisplay = getTimerDisplayElement();
 
             if (timerDisplay) {
-                // Format the time as MM:SS.
                 timerDisplay.textContent = `${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`;
                 
-                // --- Color Alert System (for student pacing) ---
-                
-                // 5 minutes remaining (300 seconds): Red alert, time to finish the analysis.
+                // Color Alert System
                 if (remainingSeconds <= 300 && remainingSeconds > 0) {
                     timerDisplay.className = 'text-3xl font-extrabold text-red-600 timer-glow';
-                } 
-                // 15 minutes remaining (900 seconds): Yellow warning, focusing on final steps.
-                else if (remainingSeconds <= 900 && remainingSeconds > 0) {
+                } else if (remainingSeconds <= 900 && remainingSeconds > 0) {
                     timerDisplay.className = 'text-3xl font-extrabold text-yellow-600';
-                } 
-                // Default state: Plenty of time, green.
-                else if (remainingSeconds > 0) {
+                } else if (remainingSeconds > 0) {
                      timerDisplay.className = 'text-3xl font-extrabold text-green-600';
                 }
                 
-                // Time's up! Stop the clock and display the final message.
                 if (remainingSeconds === 0) {
                     timerDisplay.textContent = 'TIME UP!';
                     clearInterval(timerUpdateInterval);
                 }
             }
         }
+        
+        // --- Persistence Logic (using localStorage) ---
 
-        // Start the timer once the entire page content is loaded.
-        document.addEventListener('DOMContentLoaded', initializeTimer);
+        /**
+         * Saves a key-value pair to localStorage using a unique prefix.
+         * @param {string} key - The ID of the form element.
+         * @param {string} value - The value to save.
+         */
+        function saveData(key, value) {
+            try {
+                localStorage.setItem('worksheet_' + key, value);
+            } catch (e) {
+                // Failsafe in case localStorage is disabled
+                console.warn("Could not save data: localStorage is inaccessible.");
+            }
+        }
+
+        /**
+         * Loads all saved data from localStorage and populates the form fields.
+         * Targets all input elements (text, number, etc.) and all textareas that have an ID.
+         */
+        function loadData() {
+            const persistentElements = document.querySelectorAll('input[id], textarea[id]');
+
+            persistentElements.forEach(element => {
+                const id = element.id;
+                const savedValue = localStorage.getItem('worksheet_' + id);
+                
+                if (savedValue !== null) {
+                    element.value = savedValue;
+                }
+                
+                // Attach event listener for immediate saving on input
+                element.addEventListener('input', (e) => saveData(id, e.target.value));
+            });
+        }
+
+        // Initialize Data Loading and Timer on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initializeTimer();
+        });
     </script>
 </head>
 <body class="p-4 md:p-8">
@@ -141,8 +168,15 @@
                 </div>
             </div>
             
+            <!-- Student Name Field (Persists & Half Width) -->
+            <div class="mb-6 w-full md:max-w-md"> <!-- Max width set to half (md:max-w-md) on medium screens and up -->
+                <label for="student-name" class="block text-sm font-semibold text-gray-700 mb-1">Student Name:</label>
+                <input type="text" id="student-name" placeholder="Enter your full name" 
+                       class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue">
+            </div>
+
             <!-- Link to the Colab Notebook -->
-            <div class="mt-4 mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div class="mt-4 mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200 print:hidden">
                 <p class="text-blue-700 font-bold">
                     <svg class="w-5 h-5 inline mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                     Colab Notebook Link:
@@ -153,7 +187,7 @@
             </div>
 
             <!-- The Live Countdown Display -->
-            <div class="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+            <div class="p-3 bg-gray-50 rounded-lg flex items-center justify-between print:hidden">
                 <span class="text-lg font-semibold text-secondary-gray">Time Remaining for Independent Work (55 mins):</span>
                 <span id="work-timer" class="text-3xl font-extrabold text-green-600">55:00</span>
             </div>
@@ -168,8 +202,8 @@
             <p class="text-secondary-gray">Your goal is to perform a deep comparative analysis of **three** Hierarchical Clustering strategies (`'ward'`, `'average'`, `'complete'`) against the **K-Means** baseline. You must analyze the impact of the **linkage method** on cluster quality using the Silhouette Score.</p>
         </section>
 
-        <!-- Instructions -->
-        <section class="mb-8 p-6 bg-white rounded-xl card">
+        <!-- Instructions (Hidden when printing to save space) -->
+        <section class="mb-8 p-6 bg-white rounded-xl card print:hidden">
             <h2 class="text-xl font-semibold mb-4 text-primary-blue flex items-center">
                 <svg class="w-5 h-5 mr-2 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                 📝 Instructions
@@ -276,25 +310,25 @@
             <h2 class="text-xl font-semibold mb-4 text-primary-blue">
                 ✍️ Final Analysis Questions
             </h2>
-            <p class="text-secondary-gray mb-4">Answer these questions in your **Colab notebook** or in a separate document after completing the hands-on tasks.</p>
+            <p class="text-secondary-gray mb-4">Answer these questions in your **Colab notebook** or directly below for printing.</p>
 
             <div class="space-y-6">
                 <div>
                     <h3 class="font-bold text-gray-800 mb-1">1. Dendrogram Interpretation (Ward Linkage):</h3>
                     <p class="text-sm text-secondary-gray">Approximately what **Y-axis distance** level would you draw a horizontal cut line to isolate exactly $k=4$ clusters? (Hint: The point where 4 distinct vertical lines would appear).</p>
-                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="2" placeholder="Your Answer..."></textarea>
+                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="2" placeholder="Your Answer..." id="q1-answer"></textarea>
                 </div>
                 
                 <div>
                     <h3 class="font-bold text-gray-800 mb-1">2. Impact of Linkage Methods:</h3>
                     <p class="text-sm text-secondary-gray">Compare the results of the three Hierarchical Linkage methods ('Ward', 'Average', 'Complete'). Which method performed the best? Based on what you know about how these methods work, why might one method be better suited than the others for this particular video game sales data?</p>
-                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="4" placeholder="Your Answer..."></textarea>
+                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="4" placeholder="Your Answer..." id="q2-answer"></textarea>
                 </div>
 
                 <div>
                     <h3 class="font-bold text-gray-800 mb-1">3. Overall Model Recommendation:</h3>
                     <p class="text-sm text-secondary-gray">Considering the K-Means Baseline, the best Hierarchical Model you found, and the principle that **the best model is often the simplest model**: Which overall clustering approach would you recommend for production use? **Justify your choice** based on the final scores and the computational simplicity of the chosen method.</p>
-                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="4" placeholder="Your Answer..."></textarea>
+                    <textarea class="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-primary-blue focus:border-primary-blue" rows="4" placeholder="Your Answer..." id="q3-answer"></textarea>
                 </div>
             </div>
         </section>
@@ -303,6 +337,12 @@
             Module 4 - Unsupervised Learning Workshop - ONU Data Science Program - Prepared by Professor Younger, October 2025
         </footer>
     </div>
+    
+    <!-- Floating Print Button (Hidden when printing) -->
+    <button onclick="window.print()" class="fixed bottom-6 right-6 p-4 bg-primary-blue text-white rounded-full shadow-lg hover:bg-blue-700 transition duration-300 z-50 focus:outline-none focus:ring-4 focus:ring-blue-300 print:hidden">
+        <!-- New, standard printer icon SVG -->
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2M17 17v2a2 2 0 01-2 2H9a2 2 0 01-2-2v-2M6 9V7a2 2 0 012-2h8a2 2 0 012 2v2M6 9h12M10 18h4"></path></svg>
+    </button>
 
 </body>
 </html>
