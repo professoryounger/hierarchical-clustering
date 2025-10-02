@@ -242,18 +242,18 @@
             <p class="text-secondary-gray">Your goal is to perform a deep comparative analysis of **three** Hierarchical Clustering strategies (`'ward'`, `'average'`, `'complete'`) against the **K-Means** baseline. You must analyze the impact of the **linkage method** on cluster quality using the Silhouette Score.</p>
         </section>
 
-        <!-- Instructions (New Staged Approach) -->
+        <!-- Instructions (New Staged Approach with explanations) -->
         <section class="mb-8 p-6 bg-white rounded-xl card print:hidden">
             <h2 class="text-xl font-semibold mb-4 text-primary-blue flex items-center">
                 <svg class="w-5 h-5 mr-2 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                 📝 Guided Instructions: Code & Parameter Tuning
             </h2>
-            <p class="text-secondary-gray mb-6">You will execute the Hierarchical Clustering code in **four distinct stages** by copying and pasting the blocks below into a *new code cell* in your **Colab notebook** (around Section 8, just before the *Hierarchical Clustering* heading). **Run the cell after each stage.**</p>
+            <p class="text-secondary-gray mb-6">You will execute the Hierarchical Clustering code in **four distinct stages** by copying and pasting the blocks below into a *new code cell* in your **Colab notebook** (around Section 8). **Run the cell after each stage.**</p>
 
-            <!-- CODE STAGE 1 -->
+            <!-- CODE STAGE 1: Imports and Linkage Data Preparation -->
             <div class="mb-6 p-4 border-l-4 border-gray-400 bg-gray-50 rounded-md">
-                <h3 class="text-lg font-medium text-gray-700">Stage 1: Imports and Linkage Data Preparation (One Time)</h3>
-                <p class="text-sm text-secondary-gray mt-1">This code imports the necessary libraries and prepares the linkage data matrix using the scaled data from previous steps.</p>
+                <h3 class="text-lg font-medium text-gray-700">Stage 1: Imports and Linkage Data Preparation (One Time Setup)</h3>
+                <p class="text-sm text-secondary-gray mt-1">This code imports libraries and calculates the **distance matrix** (`linked`) using the data. The distance matrix is the foundation for all hierarchical methods.</p>
                 <div class="code-block-container">
                     <button class="copy-btn" onclick="copyCode(this, 'code-stage-1')">Copy Code</button>
                     <pre id="code-stage-1">
@@ -263,7 +263,7 @@ from sklearn.metrics import silhouette_score
 from scipy.cluster.hierarchy import linkage, dendrogram
 import matplotlib.pyplot as plt
 
-# The linkage function calculates the distances between clusters
+# The linkage function calculates the initial distances (clusters are merged based on this)
 # We start with the 'ward' method (minimum variance) for the baseline.
 # NOTE: The variable X_scaled should already be defined from the previous K-Means section.
 linked = linkage(X_scaled, method='ward') 
@@ -271,22 +271,15 @@ linked = linkage(X_scaled, method='ward')
                 </div>
             </div>
 
-            <!-- STEP 1: Baseline (Ward) INSTRUCTIONS -->
-            <div class="mb-6 p-4 border-l-4 border-indigo-400 bg-indigo-50 rounded-md">
-                <h3 class="text-lg font-medium text-indigo-700">Section I: Baseline & Dendrogram Analysis (Ward Linkage)</h3>
-                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">**ACTION:** Copy and run the code for **Stage 2, Stage 3, and Stage 4** below. Do not change any parameters yet.</p>
-                <ol class="list-decimal list-inside ml-2 text-secondary-gray space-y-2">
-                    <li>**Dendrogram:** Examine the resulting dendrogram plot. Use it to answer Question 1 in the worksheet below.</li>
-                    <li>**Record:** Record the Silhouette Score (printed by Stage 4) in the comparison table for **Ward**.</li>
-                </ol>
-            </div>
-
-            <!-- CODE STAGE 2 -->
-            <div class="code-block-container">
-                <button class="copy-btn" onclick="copyCode(this, 'code-stage-2')">Copy Code</button>
-                <pre id="code-stage-2">
-# STAGE 2: Dendrogram Generation (Visualizing cluster merges)
-# This uses the 'linked' data prepared in Stage 1.
+            <!-- CODE STAGE 2: Dendrogram Generation -->
+            <div class="mb-6 p-4 border-l-4 border-yellow-400 bg-yellow-50 rounded-md">
+                <h3 class="text-lg font-medium text-yellow-700">Stage 2: Dendrogram Generation (Visualizing Merges)</h3>
+                <p class="text-sm text-secondary-gray mt-1">This block plots the **Dendrogram**. Each merge of two clusters is represented by a U-shaped line. The height of the U-line shows the distance at which the clusters were merged. **Use this plot to answer Question 1.**</p>
+                <div class="code-block-container">
+                    <button class="copy-btn" onclick="copyCode(this, 'code-stage-2')">Copy Code</button>
+                    <pre id="code-stage-2">
+# STAGE 2: Dendrogram Generation 
+# This plot visually represents the hierarchical merging process.
 plt.figure(figsize=(12, 8))
 dendrogram(linked, orientation='top', distance_sort='descending', show_leaf_counts=True)
 plt.title('Dendrogram for Hierarchical Clustering (Current Linkage)')
@@ -295,22 +288,28 @@ plt.ylabel('Distance')
 plt.show()
                 </pre>
             </div>
-            
-            <!-- CODE STAGE 3 -->
-            <div class="code-block-container">
-                <button class="copy-btn" onclick="copyCode(this, 'code-stage-3')">Copy Code</button>
-                <pre id="code-stage-3">
-# STAGE 3: Agglomerative Clustering (Applying the method)
-# We apply the full clustering model using the same linkage method as in Stage 1.
+
+            <!-- CODE STAGE 3: Agglomerative Clustering -->
+            <div class="mb-6 p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+                <h3 class="text-lg font-medium text-green-700">Stage 3: Agglomerative Clustering (Model Fitting)</h3>
+                <p class="text-sm text-secondary-gray mt-1">This is where the model is actually created. `AgglomerativeClustering` takes the linkage logic (calculated in Stage 1) and **cuts the hierarchy** to create the final $k=4$ clusters. The result is stored in `h_labels`.</p>
+                <div class="code-block-container">
+                    <button class="copy-btn" onclick="copyCode(this, 'code-stage-3')">Copy Code</button>
+                    <pre id="code-stage-3">
+# STAGE 3: Agglomerative Clustering 
+# We explicitly set n_clusters=4 and define the linkage method.
 h_cluster = AgglomerativeClustering(n_clusters=4, linkage='ward')
 h_labels = h_cluster.fit_predict(X_scaled)
                 </pre>
             </div>
 
-            <!-- CODE STAGE 4 -->
-            <div class="code-block-container">
-                <button class="copy-btn" onclick="copyCode(this, 'code-stage-4')">Copy Code</button>
-                <pre id="code-stage-4">
+            <!-- CODE STAGE 4: Visualization and Score Calculation -->
+            <div class="mb-6 p-4 border-l-4 border-indigo-400 bg-indigo-50 rounded-md">
+                <h3 class="text-lg font-medium text-indigo-700">Stage 4: Visualization and Score Calculation (Result)</h3>
+                <p class="text-sm text-secondary-gray font-bold mt-1">This final block calculates the **Silhouette Score** (measuring cluster separation and cohesion) and plots the resulting clusters. **Record the printed Silhouette Score in the table.**</p>
+                <div class="code-block-container">
+                    <button class="copy-btn" onclick="copyCode(this, 'code-stage-4')">Copy Code</button>
+                    <pre id="code-stage-4">
 # STAGE 4: Visualization and Score Calculation
 score = silhouette_score(X_scaled, h_labels)
 
@@ -323,30 +322,34 @@ plt.colorbar(label='Cluster Label')
 plt.show()
 
 print(f"Silhouette Score: {score:.4f}")
-                </pre>
+                    </pre>
+                </div>
             </div>
 
+            <!-- Tuning Instructions (Condensed) -->
+            <h3 class="text-xl font-semibold mt-8 mb-4 text-primary-blue border-t pt-4">Parameter Tuning: Average and Complete Linkage</h3>
+            
             <!-- STEP 2: Tuning (Average) INSTRUCTIONS -->
             <div class="mb-6 p-4 border-l-4 border-purple-400 bg-purple-50 rounded-md">
                 <h3 class="text-lg font-medium text-purple-700">Section II: Tune the Model (Average Linkage)</h3>
-                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">**ACTION:** Modify your Colab code cell now.</p>
+                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">**ACTION:** Modify your Colab code cell now and re-run all four stages.</p>
                 <ol class="list-decimal list-inside ml-2 text-secondary-gray space-y-2">
-                    <li>**Modify Stage 1:** Change `method='ward'` to **`method='average'`** in the `linked = linkage(...)` call.</li>
-                    <li>**Modify Stage 3:** Change `linkage='ward'` to **`linkage='average'`** in the `h_cluster = AgglomerativeClustering(...)` call.</li>
+                    <li>**Modify Stage 1:** Change `method='ward'` to **`method='average'`**.</li>
+                    <li>**Modify Stage 3:** Change `linkage='ward'` to **`linkage='average'`**.</li>
                     <li>**Re-run:** Run the *entire* code cell again.</li>
-                    <li>**Record:** Record the new Silhouette Score in the comparison table for **Average**.</li>
+                    <li>**Record:** Record the new Silhouette Score (from Stage 4) in the comparison table for **Average**.</li>
                 </ol>
             </div>
             
             <!-- STEP 3: Deep Tuning (Complete) INSTRUCTIONS -->
             <div class="mb-6 p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
                 <h3 class="text-lg font-medium text-red-700">Section III: Deep Tuning (Complete Linkage)</h3>
-                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">**ACTION:** Modify your Colab code cell one last time.</p>
+                <p class="text-sm text-secondary-gray font-bold mt-1 mb-2">**ACTION:** Modify your Colab code cell one last time and re-run all four stages.</p>
                 <ol class="list-decimal list-inside ml-2 text-secondary-gray space-y-2">
-                    <li>**Modify Stage 1:** Change `method='average'` to **`method='complete'`** in the `linked = linkage(...)` call.</li>
-                    <li>**Modify Stage 3:** Change `linkage='average'` to **`linkage='complete'`** in the `h_cluster = AgglomerativeClustering(...)` call.</li>
+                    <li>**Modify Stage 1:** Change `method='average'` to **`method='complete'`**.</li>
+                    <li>**Modify Stage 3:** Change `linkage='average'` to **`linkage='complete'`**.</li>
                     <li>**Re-run:** Run the * entire* code cell.</li>
-                    <li>**Record:** Record the final Silhouette Score in the comparison table for **Complete**.</li>
+                    <li>**Record:** Record the final Silhouette Score (from Stage 4) in the comparison table for **Complete**.</li>
                 </ol>
             </div>
 
@@ -437,7 +440,7 @@ print(f"Silhouette Score: {score:.4f}")
         </section>
         
         <footer class="mt-8 text-center text-xs text-secondary-gray p-4">
-            Module 4 - Unsupervised Learning Workshop - ONU Data Science Program - Prepared by Professor Younger, October 2025
+            Module 4 - Unsupervised Learning Workshop - ONU Machine Learning Program - Prepared by Professor Younger, October 2025
         </footer>
     </div>
     
