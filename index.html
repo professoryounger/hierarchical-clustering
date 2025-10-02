@@ -279,11 +279,20 @@ linked = linkage(X_scaled, method='ward')
                     <button class="copy-btn" onclick="copyCode(this, 'code-stage-2')">Copy Code</button>
                     <pre id="code-stage-2">
 # STAGE 2: Dendrogram Generation 
-# This plot visually represents the hierarchical merging process.
-plt.figure(figsize=(12, 8))
-dendrogram(linked, orientation='top', distance_sort='descending', show_leaf_counts=True)
-plt.title('Dendrogram for Hierarchical Clustering (Current Linkage)')
-plt.xlabel('Sample Index')
+# This plot visually represents the hierarchical merging process.           
+# 2. Plot the Dendrogram
+# This helps visually determine the appropriate number of clusters by cutting the tree.
+plt.figure(figsize=(15, 7))
+dendrogram(linked,
+           orientation='top',
+           truncate_mode='lastp', # Show only the last 30 merged clusters for clarity
+           p=30,
+           show_leaf_counts=True,
+           leaf_rotation=90.,
+           leaf_font_size=12.,
+           show_contracted=True)
+plt.title('Hierarchical Clustering Dendrogram (Regional Sales)')
+plt.xlabel('Data Point Index or Cluster Size')
 plt.ylabel('Distance')
 plt.show()
                 </pre>
